@@ -127,9 +127,15 @@ class GeminiAnalysisNode:
             # Convert the ComfyUI image tensor to PIL image
             i = 255.0 * image.cpu().numpy()
             i = np.clip(i, 0, 255).astype(np.uint8)
+
+            # Handle both batched and non-batched images correctly
             if i.ndim == 4:
-                i = i.squeeze(0) if i.shape[0] == 1 else i # remove batch dimension
-                i = i.transpose(1, 2, 0) if i.shape[0] < i.shape[1] else i # reorder to HWC
+                i = i.squeeze(0) if i.shape[0] == 1 else i  # remove batch dimension if present
+            if i.ndim == 3 and i.shape[0] < i.shape[2]:
+                i = i.transpose(1, 2, 0)  # Reorder to HWC
+            elif i.ndim == 2:
+               #convert grayscale image to 3 channels
+               i=np.stack((i,i,i),axis=-1)
 
             img = Image.fromarray(i)
 
